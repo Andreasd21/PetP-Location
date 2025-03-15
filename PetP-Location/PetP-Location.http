@@ -1,0 +1,6 @@
+@PetP_Location_HostAddress = http://localhost:5130
+
+GET {{PetP_Location_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
