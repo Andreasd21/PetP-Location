@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PetP_Location.Model;
 
 namespace PetP_Location.Controllers
 {
@@ -8,6 +9,7 @@ namespace PetP_Location.Controllers
     public class DemoController : ControllerBase
     {
         private readonly ILogger<DemoController> _logger;
+
         public DemoController(ILogger<DemoController> logger)
         {
             _logger = logger;
