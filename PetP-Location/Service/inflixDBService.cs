@@ -27,16 +27,24 @@ namespace PetP_Location.Service
             }
         }
 
-        public async Task WriteDataAsync(string bucket, string measurement, string fieldName, int fieldNumber) 
+        public async Task WriteDataAsync(
+            string animalId,
+            double latitude,
+            double longitude,
+            double altitude)
         {
-            if (_client == null) throw new InvalidOperationException("InfluxDB client is not initialized. Call Connect() first.");
+            if (_client == null)
+                throw new InvalidOperationException("InfluxDB client is not initialized. Call Connect() first.");
 
             var writeApi = _client.GetWriteApiAsync();
-            var point = PointData.Measurement(measurement)
-                .Field(fieldName,fieldNumber)
+            var point = PointData.Measurement("Animal_posistion")
+                .Tag("Animal", animalId)
+                .Field("latitude", latitude)
+                .Field("longitude", longitude)
+                .Field("altitude", altitude)
                 .Timestamp(DateTime.UtcNow, WritePrecision.Ns);
 
-            await writeApi.WritePointAsync(point, bucket, "PetP");
+            await writeApi.WritePointAsync(point, "Location", "PetP");
         }
 
         public async Task<List<Dictionary<string, object>>> QueryDataAsync(string org, string fluxQuery)
@@ -68,6 +76,41 @@ namespace PetP_Location.Service
 
             var deleteApi = _client.GetDeleteApi();
             await deleteApi.Delete(DateTime.MinValue, DateTime.MaxValue, predicate, bucket, org);
+        }
+
+        public async Task<List<AnimalPosition>> GetAnimalPositionsLastHourAsync(string animalId)
+        {
+            if (_client == null)
+                throw new InvalidOperationException("InfluxDB client is not initialized. Call Connect() first.");
+
+            var queryApi = _client.GetQueryApi();
+
+            var flux = $@"
+            from(bucket: ""Location"")
+            |> range(start: -1h)
+            |> filter(fn: (r) => r._measurement == ""Animal_posistion"")
+            |> filter(fn: (r) => r.Animal == ""{animalId}"")
+            |> pivot(rowKey:[""_time""], columnKey: [""_field""], valueColumn: ""_value"")";
+
+            var tables = await queryApi.QueryAsync(flux, "PetP");
+            var positions = new List<AnimalPosition>();
+
+            foreach (var table in tables)
+            {
+                foreach (var record in table.Records)
+                {
+                    positions.Add(new AnimalPosition
+                    {
+                        AnimalId = record.GetValueByKey("Animal")?.ToString(),
+                        Latitude = Convert.ToDouble(record.GetValueByKey("latitude")),
+                        Longitude = Convert.ToDouble(record.GetValueByKey("longitude")),
+                        Altitude = Convert.ToDouble(record.GetValueByKey("altitude")),
+                        Timestamp = record.GetTime()?.ToDateTimeUtc() ?? default(DateTime)
+                    });
+                }
+            }
+
+            return positions.OrderBy(p => p.Timestamp).ToList();
         }
     }
 }
