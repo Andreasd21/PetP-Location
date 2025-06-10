@@ -59,5 +59,26 @@ namespace PetP_Location.Controllers
                 return StatusCode(500, "An error occurred");
             }
         }
+        [HttpGet("error")]
+        public IActionResult GetError()
+        {
+            _logger.LogInformation("GET request received at DemoController");
+
+            try
+            {
+
+                _logger.LogDebug("Processing GET request in PetP-location");
+
+
+                _logger.LogInformation("Successfully Location app");
+                return BadRequest("error");
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error occurred while processing GET request");
+                return StatusCode(500, "An error occurred");
+            }
+        }
     }
 }
