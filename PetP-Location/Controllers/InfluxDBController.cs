@@ -1,5 +1,6 @@
 using InfluxDB.Client.Core;
 using Microsoft.AspNetCore.Mvc;
+using PetP_Location.Model;
 using PetP_Location.Service;
 
 namespace PetP_Location.Controllers
@@ -23,13 +24,9 @@ namespace PetP_Location.Controllers
         }
 
         [HttpPost("write")]
-        public async Task<IActionResult> WriteData(
-            string animalId,
-            double latitude,
-            double longitude,
-            double altitude)
+        public async Task<IActionResult> WriteData([FromBody] AnimalDataDTO animal)
         {
-            await _influxDbService.WriteDataAsync(animalId, latitude, longitude, altitude);
+            await _influxDbService.WriteDataAsync(animal.AnimalId, animal.Latitude, animal.Longitude, animal.Altitude);
             return Ok("Data written successfully");
         }
 
